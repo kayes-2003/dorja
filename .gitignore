@@ -1,14 +1,21 @@
-# Python
-backend/venv/
+# Python — matches venv/.venv at any depth, not just backend/
+venv/
+.venv/
 __pycache__/
 *.pyc
 *.pyo
-.env
+*.egg-info/
 
-# Node / frontend
-frontend/node_modules/
-frontend/dist/
+# Environment secrets — never commit real keys
+.env
+backend/.env
 frontend/.env
 
-# Editor
+# Node / frontend
+node_modules/
+dist/
+frontend/dist/
+
+# Editor / OS
 .vscode/
+.DS_Store

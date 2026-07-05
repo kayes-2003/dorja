@@ -40,7 +40,15 @@ export default function CreateRequest() {
     setError('')
     setLoading(true)
     try {
-      const payload = { ...form, price: Number(form.price) || 0 }
+      const payload = {
+        ...form,
+        price: Number(form.price) || 0,
+        // never send an empty string for fields tied to the pickup type
+        shop_id: form.pickup_type === 'from_shop' ? (form.shop_id || null) : null,
+        pickup_address: form.pickup_type === 'from_sender' ? (form.pickup_address || null) : null,
+        item_description: form.item_description || null,
+        surprise_note: form.is_surprise ? (form.surprise_note || null) : null,
+      }
       const created = await api('/requests', { method: 'POST', body: payload })
       navigate(`/requests/${created.id}`)
     } catch (err) {

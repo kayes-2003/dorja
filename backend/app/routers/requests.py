@@ -18,9 +18,18 @@ def create_request(body: DeliveryRequestCreate, user: CurrentUser = Depends(get_
       - a "surprise" (gift/card) with a note, hidden from the receiver until delivery
       - pickup either from the sender's own address or from a local shop/supershop
     """
+    if body.pickup_type == "from_shop" and not body.shop_id:
+        raise HTTPException(status_code=400, detail="Please select a shop for shop pickup, or switch to 'Pick up from me'.")
+
     payload = body.model_dump()
     payload["sender_id"] = user.id
-    res = supabase_admin.table("delivery_requests").insert(payload).execute()
+    try:
+        res = supabase_admin.table("delivery_requests").insert(payload).execute()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Could not create the send: {e}")
+
+    if not res.data:
+        raise HTTPException(status_code=400, detail="Could not create the send — check the area is valid.")
     return res.data[0]
 
 
@@ -51,30 +60,32 @@ def my_deliveries(user: CurrentUser = Depends(get_current_user)):
     )
     return res.data
 
-
 @router.get("/available")
 def available_requests(user: CurrentUser = Depends(get_current_user)):
     """
-    Pending requests in the courier's own area — the pool of local sends they can
-    pick up alongside their normal Daraz/CarryBee/Paperfly/Steadfast route.
+    All pending sends, network-wide — sorted so jobs in the courier's own area
+    come first (easiest to grab alongside their regular route), followed by
+    everything else. This way a courier is never blocked from picking up work
+    just because their profile's area doesn't exactly match a job's area.
     """
     if user.role != "delivery_person":
         raise HTTPException(status_code=403, detail="Only delivery persons can view this")
 
-    dp = supabase_admin.table("delivery_persons").select("area_id").eq("id", user.id).single().execute()
-    area_id = dp.data["area_id"] if dp.data else None
-    if not area_id:
-        return []
+    dp = supabase_admin.table("delivery_persons").select("area_id").eq("id", user.id).execute()
+    courier_area_id = dp.data[0]["area_id"] if dp.data and dp.data[0].get("area_id") else None
 
     res = (
         supabase_admin.table("delivery_requests")
-        .select("*")
+        .select("*, areas(name)")
         .eq("status", "pending")
-        .eq("area_id", area_id)
         .order("created_at")
         .execute()
     )
-    return res.data
+    jobs = res.data or []
+
+    own_area = [j for j in jobs if j.get("area_id") == courier_area_id]
+    other_area = [j for j in jobs if j.get("area_id") != courier_area_id]
+    return own_area + other_area
 
 
 @router.post("/{request_id}/accept")

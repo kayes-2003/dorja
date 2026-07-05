@@ -1,6 +1,5 @@
-import jwt
-from fastapi import Header, HTTPException, status
-from .config import SUPABASE_JWT_SECRET, supabase_admin
+from fastapi import Depends, Header, HTTPException, status
+from .config import supabase_admin
 
 
 class CurrentUser:
@@ -11,46 +10,40 @@ class CurrentUser:
         self.role = profile.get("role", "customer")
 
 
-def _decode_token(token: str) -> dict:
-    try:
-        payload = jwt.decode(
-            token,
-            SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
-            audience="authenticated",
-        )
-        return payload
-    except jwt.PyJWTError as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {e}")
-
-
 async def get_current_user(authorization: str | None = Header(default=None)) -> CurrentUser:
     """
     Every protected route depends on this. Expects:
         Authorization: Bearer <supabase-access-token>
     The frontend gets this token from supabase.auth.getSession() after login.
+
+    Verification is delegated to Supabase itself (rather than decoding the JWT
+    locally) so this works correctly whether the project uses the legacy
+    HS256 shared-secret signing or the newer ES256 asymmetric signing keys.
     """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing bearer token")
 
     token = authorization.removeprefix("Bearer ").strip()
-    payload = _decode_token(token)
-    user_id = payload.get("sub")
-    email = payload.get("email")
 
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Token missing subject")
+    try:
+        user_response = supabase_admin.auth.get_user(token)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
+
+    user = user_response.user if user_response else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     profile_res = (
-        supabase_admin.table("profiles").select("*").eq("id", user_id).single().execute()
+        supabase_admin.table("profiles").select("*").eq("id", user.id).single().execute()
     )
     if not profile_res.data:
         raise HTTPException(status_code=404, detail="Profile not found for this user")
 
-    return CurrentUser(id=user_id, email=email, profile=profile_res.data)
+    return CurrentUser(id=user.id, email=user.email, profile=profile_res.data)
 
 
-async def require_delivery_person(user: CurrentUser) -> CurrentUser:
-    if user.role != "delivery_person":
-        raise HTTPException(status_code=403, detail="Only delivery persons can do this")
+async def get_admin_user(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
     return user

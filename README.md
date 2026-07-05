@@ -1,5 +1,6 @@
 # DeliverConnect — hyperlocal "surprise & pickup" network
 
+
 Riders already run daily routes through every neighbourhood for Daraz, CarryBee,
 Paperfly, Steadfast and dozens of other platforms. **DeliverConnect** lets residents
 of that same area piggyback on those trusted, already-moving couriers for local
@@ -63,6 +64,14 @@ cd backend
 python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env   # fill in your Supabase values
+uvicorn app.main:app --reload --port 8000
+
+
+####for windows 10
+cd backend
+python -m venv venv
+venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 API docs: `http://localhost:8000/docs`

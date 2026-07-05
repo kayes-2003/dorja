@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# VS Code
+.vscode/
+
+# env files
+.env
+.env.local
+
+# misc
+.DS_Store

@@ -26,6 +26,8 @@ class DeliveryPersonOut(BaseModel):
 
 # ---------- Delivery requests ----------
 
+from pydantic import field_validator
+
 class DeliveryRequestCreate(BaseModel):
     area_id: str
     pickup_type: str = Field(default="from_sender", pattern="^(from_sender|from_shop)$")
@@ -41,6 +43,15 @@ class DeliveryRequestCreate(BaseModel):
     surprise_note: Optional[str] = None
 
     price: float = 0
+
+    @field_validator("shop_id", "pickup_address", "item_description", "surprise_note", mode="before")
+    @classmethod
+    def blank_to_none(cls, v):
+        # An empty string from an untouched form field must become NULL,
+        # not "" — Postgres rejects "" for the shop_id UUID column.
+        if v == "":
+            return None
+        return v
 
 
 class DeliveryRequestOut(BaseModel):
@@ -71,3 +82,19 @@ class RatingCreate(BaseModel):
     request_id: str
     rating: int = Field(ge=1, le=5)
     comment: Optional[str] = None
+
+
+class RoleUpdate(BaseModel):
+    role: str = Field(pattern="^(customer|delivery_person|admin)$")
+
+
+class VerifyUpdate(BaseModel):
+    verified: bool
+
+
+class AdminStatusUpdate(BaseModel):
+    status: str = Field(pattern="^(pending|accepted|picked_up|delivered|cancelled)$")
+
+
+class AdminAssignCourier(BaseModel):
+    delivery_person_id: str

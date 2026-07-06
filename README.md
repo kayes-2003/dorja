@@ -1,20 +1,50 @@
 # DeliverConnect — hyperlocal "surprise & pickup" network
 
 
-Riders already run daily routes through every neighbourhood for Daraz, CarryBee,
-Paperfly, Steadfast and dozens of other platforms. **DeliverConnect** lets residents
-of that same area piggyback on those trusted, already-moving couriers for local
-sends that don't need a full platform shipment:
+# DeliverConnect
 
-- 🎁 Send a **surprise** (gift, card, cake) to a friend nearby, with a private note
-  the courier passes on without revealing it's an "app delivery."
-- 🛒 Have a courier **grab something from a local supershop** on their route and
-  drop it at your door.
-- 📦 Just move a **box between two people in the same area** — same-day, cheap,
-  because the courier was going that way anyway.
+**Live app:** [dorja-9n53.vercel.app](https://dorja-9n53.vercel.app/)
 
-Couriers keep doing their normal Daraz/CarryBee/Paperfly/Steadfast runs and simply
-pick up nearby local jobs (`/requests/available`) in the gaps.
+A hyperlocal delivery network that connects residents of a neighbourhood with the delivery people already working their streets for Daraz, CarryBee, Paperfly, Steadfast, and dozens of other platforms — so a courier already on their regular route can also carry a surprise gift, a supershop pickup, or a parcel between two neighbours in the same area.
+
+---
+
+## The idea
+
+Every residential area already has dedicated delivery people moving through it daily on behalf of major platforms. DeliverConnect turns that existing presence into a shared local resource:
+
+- 🎁 **Send a surprise** — a birthday gift or card to a friend nearby, delivered with a private note the courier passes along without it feeling like "an app delivery"
+- 🛒 **Supershop pickups** — ask a courier to grab something from a local shop on their route and drop it at your door
+- 📦 **Neighbour-to-neighbour parcels** — move something across the same area, same day, without waiting on a full platform shipment
+
+---
+
+## How it works
+
+1. A resident posts a send — what it is, where it's going, and whether it's a surprise
+2. A courier already working that area (or any area, ranked by proximity) accepts the job
+3. Both sides get status updates as it moves through **accepted → picked up → delivered**, then rate the delivery
+
+---
+
+## Roles
+
+| Role | What they can do |
+|---|---|
+| **Customer** | Create sends, track their own deliveries, rate couriers once delivered |
+| **Delivery person** | Register with the platforms/area they already work, browse and accept pending jobs, move jobs through pickup → delivery |
+| **Admin** | Full oversight — view every send network-wide, manually assign or reassign a courier, force-correct any status, manage user roles, verify couriers |
+
+---
+
+## Tech stack
+
+- **Frontend:** React (Vite), plain CSS with a custom design system, `react-router-dom`
+- **Backend:** Python, FastAPI
+- **Database & Auth:** Supabase (Postgres, Row Level Security, Auth)
+- **Deployment:** Vercel (Services — frontend and backend deployed together from one repo)
+
+
 
 ## Architecture
 
@@ -60,13 +90,6 @@ pick up nearby local jobs (`/requests/available`) in the gaps.
 
 ### 2. Backend (Python)
 ```bash
-cd backend
-python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env   # fill in your Supabase values
-uvicorn app.main:app --reload --port 8000
-
-
 ####for windows 10
 cd backend
 python -m venv venv
@@ -102,3 +125,17 @@ App: `http://localhost:5173`
   area-based matching.
 - Add push notifications (e.g. via a service worker or FCM) instead of polling
   `/notifications`.
+
+
+## Roadmap
+
+- Payment integration (bKash/Nagad) — `price` is currently a displayed offer amount only
+- Geolocation-based matching instead of area-based
+- Push notifications instead of dashboard polling
+
+---
+
+## License
+
+This project is provided as-is for demonstration purposes.
+

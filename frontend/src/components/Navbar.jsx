@@ -20,7 +20,7 @@ export default function Navbar() {
           <span className="dot dot-parcel" />
           <span className="dot dot-route" />
         </span>
-        DeliverConnect
+        Dorja
       </Link>
       <div className="nav-links">
         {session ? (
